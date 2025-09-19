@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the repo
+      # 1. Checkout code
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -31,33 +31,52 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 4. Build and run unit tests
+      # 4. Build project & run unit tests
       - name: Build with Gradle
         run: ./gradlew build
 
       - name: Run Unit Tests
         run: ./gradlew test
 
-      # 5. Set up Android SDK & Emulator
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Start Emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 30
-          target: default
-          arch: x86_64
-          profile: Nexus 6
-          script: ./gradlew connectedAndroidTest
-
-      # 6. Build debug APK
+      # 5. Build debug APK
       - name: Build debug APK
         run: ./gradlew assembleDebug --stacktrace
 
-      # 7. Upload APK as artifact
+      # 6. Upload APK artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app
+          name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
+
+  instrumentation-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        api-level: [32, 34, 36] # Run tests on Android 12L, 13, 14
+    steps:
+      # 1. Checkout code
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Set up JDK 21
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      # 3. Make gradlew executable
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 4. Run emulator and instrumented tests
+      - name: Run Instrumented Tests on API ${{ matrix.api-level }}
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: google_apis
+          arch: x86_64
+          profile: Pixel 6
+          script: ./gradlew connectedAndroidTest
