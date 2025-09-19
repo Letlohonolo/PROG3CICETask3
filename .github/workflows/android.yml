@@ -49,34 +49,32 @@ jobs:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
 
-  instrumentation-tests:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        api-level: [32, 34, 36] # Run tests on Android 12L, 13, 14
-    steps:
-      # 1. Checkout code
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+instrumentation-tests:
+  runs-on: ubuntu-latest
+  strategy:
+    matrix:
+      api-level: [33, 34, 36] # use 33+ (lighter + more stable)
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      # 2. Set up JDK 21
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
 
-      # 3. Make gradlew executable
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
 
-      # 4. Run emulator and instrumented tests
-      - name: Run Instrumented Tests on API ${{ matrix.api-level }}
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: ${{ matrix.api-level }}
-          target: google_apis
-          arch: x86_64
-          profile: Pixel 6
-          script: ./gradlew connectedAndroidTest
+    - name: Run Instrumented Tests on API ${{ matrix.api-level }}
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: ${{ matrix.api-level }}
+        target: google_apis
+        arch: x86_64
+        profile: Nexus 6
+        emulator-options: -no-snapshot -noaudio -no-boot-anim -camera-back none
+        script: ./gradlew connectedAndroidTest
+
